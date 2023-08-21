@@ -1,0 +1,1174 @@
+Description: (SO0062-regional) - Distributed Load Testing on AWS testing resources regional deployment. Version v3.2.2
+Parameters:
+  ExistingVPCId:
+    Type: String
+    AllowedPattern: (?:^$|^vpc-[a-zA-Z0-9-]+)
+    Description: Existing VPC ID
+  ExistingSubnetA:
+    Type: String
+    AllowedPattern: (?:^$|^subnet-[a-zA-Z0-9-]+)
+    Description: First existing subnet
+  ExistingSubnetB:
+    Type: String
+    AllowedPattern: (?:^$|^subnet-[a-zA-Z0-9-]+)
+    Description: Second existing subnet
+  VpcCidrBlock:
+    Type: String
+    Default: 192.168.0.0/16
+    AllowedPattern: (?:^$|(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2}))
+    ConstraintDescription: The VPC CIDR block must be a valid IP CIDR range of the form x.x.x.x/x.
+    Description: CIDR block of the new VPC where AWS Fargate will be placed
+    MaxLength: 18
+    MinLength: 9
+  SubnetACidrBlock:
+    Type: String
+    Default: 192.168.0.0/20
+    AllowedPattern: (?:^$|(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2}))
+    ConstraintDescription: The subnet CIDR block must be a valid IP CIDR range of the form x.x.x.x/x.
+    Description: CIDR block for subnet A of the AWS Fargate VPC
+    MaxLength: 18
+    MinLength: 9
+  SubnetBCidrBlock:
+    Type: String
+    Default: 192.168.16.0/20
+    AllowedPattern: (?:^$|(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2}))
+    ConstraintDescription: The subnet CIDR block must be a valid IP CIDR range of the form x.x.x.x/x.
+    Description: CIDR block for subnet B of the AWS Fargate VPC
+  EgressCidr:
+    Type: String
+    Default: 0.0.0.0/0
+    AllowedPattern: (?:^$|(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2}))
+    ConstraintDescription: The Egress CIDR block must be a valid IP CIDR range of the form x.x.x.x/x.
+    Description: CIDR Block to restrict the Fargate container outbound access
+    MaxLength: 18
+    MinLength: 9
+Rules:
+  ExistingVPCRule:
+    RuleCondition:
+      Fn::Not:
+        - Fn::Equals:
+            - Ref: ExistingVPCId
+            - ''
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Equals:
+                - Ref: ExistingSubnetA
+                - ''
+        AssertDescription: If an existing VPC Id is provided, 2 subnet ids need to be provided as well. You neglected to enter the first subnet id
+      - Assert:
+          Fn::Not:
+            - Fn::Equals:
+                - Ref: ExistingSubnetB
+                - ''
+        AssertDescription: If an existing VPC Id is provided, 2 subnet ids need to be provided as well. You neglected to enter the second subnet id
+Mappings:
+  Solution:
+    Config:
+      APIServicesLambdaRoleName: Distributed-Load-Testing-DLTApiDLTAPIServicesLambd-UXC7GVGA4727
+      CodeVersion: v3.2.2
+      ContainerImage: public.ecr.aws/aws-solutions/distributed-load-testing-on-aws-load-tester:v3.2.2
+      KeyPrefix: distributed-load-testing-on-aws/v3.2.2
+      MainStackRegion: us-east-1
+      ResultsParserRoleName: Distributed-Load-Testing-DLTLambdaFunctionLambdaRe-HYV2MH6X5G1J
+      S3Bucket: solutions
+      ScenariosS3Bucket: distributed-load-testing-dlttestrunnerstoragedlts-39d6y5p6n8pv
+      ScenariosTable: Distributed-Load-Testing-DLTTestRunnerStorageDLTScenariosTableAB6F5C2A-1TDZ5A7JKST77
+      SendAnonymousUsage: 'Yes'
+      SolutionId: SO0062
+      stackType: regional
+      TaskRunnerRoleName: Distributed-Load-Testing-DLTLambdaFunctionDLTTestL-1NZNVUQIEGWSH
+      TaskCancelerRoleName: Distributed-Load-Testing-DLTLambdaFunctionLambdaTa-19CZ2CDHPPZ6S
+      TaskStatusCheckerRoleName: Distributed-Load-Testing-DLTLambdaFunctionTaskStat-255XLVBJHZU
+      URL: https://metrics.awssolutionsbuilder.com/generic
+      Uuid: 19ec557e-80da-49dc-a18c-68432be65430
+Conditions:
+  SendAnonymousUsage:
+    Fn::Equals:
+      - Fn::FindInMap:
+          - Solution
+          - Config
+          - SendAnonymousUsage
+      - 'Yes'
+  CreateFargateVPCResources:
+    Fn::Equals:
+      - Ref: ExistingVPCId
+      - ''
+  BoolExistingVPC:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: ExistingVPCId
+          - ''
+  CDKMetadataAvailable:
+    Fn::Or:
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - af-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-northeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ap-southeast-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - ca-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - cn-northwest-1
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-central-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-north-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-2
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - eu-west-3
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - me-south-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - sa-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-east-2
+      - Fn::Or:
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-1
+          - Fn::Equals:
+              - Ref: AWS::Region
+              - us-west-2
+Resources:
+  CommonResourcesCloudWatchLogsPolicyB8257A4C:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ''
+                - - 'arn:'
+                  - Ref: AWS::Partition
+                  - ':logs:'
+                  - Ref: AWS::Region
+                  - ':'
+                  - Ref: AWS::AccountId
+                  - ':log-group:/aws/lambda/*'
+        Version: '2012-10-17'
+      PolicyName: CommonResourcesCloudWatchLogsPolicyB8257A4C
+      Roles:
+        - Ref: DLTRegionalFargateDLTTaskExecutionRole22C06EF4
+        - Ref: RegionalCustomResourceInfraCustomResourceLambdaRoleEBA8B208
+        - Ref: RealTimeDatarealTimeDataPublisherRoleA8976D01
+  DLTRegionalVpcDLTFargateVpc27038C26:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VpcCidrBlock
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value:
+            Ref: AWS::StackName
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W60
+            reason: This VPC is used for the test runner Fargate tasks only, it does not require VPC flow logs.
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTSubnetACEFDB0F7:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: DLTRegionalVpcDLTFargateVpc27038C26
+      AvailabilityZone:
+        Fn::Select:
+          - 0
+          - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: SubnetACidrBlock
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTSubnetB02222C79:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: DLTRegionalVpcDLTFargateVpc27038C26
+      AvailabilityZone:
+        Fn::Select:
+          - 1
+          - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: SubnetBCidrBlock
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTFargateIGE3847EB3:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTFargateRT243A2CBC:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: DLTRegionalVpcDLTFargateVpc27038C26
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTGatewayattachmentA7E0AEA0:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId:
+        Ref: DLTRegionalVpcDLTFargateVpc27038C26
+      InternetGatewayId:
+        Ref: DLTRegionalVpcDLTFargateIGE3847EB3
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTRoute2F53B3BB:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: DLTRegionalVpcDLTFargateRT243A2CBC
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId:
+        Ref: DLTRegionalVpcDLTFargateIGE3847EB3
+    DependsOn:
+      - DLTRegionalVpcDLTGatewayattachmentA7E0AEA0
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTRouteTableAssociationAF1EA6E2D:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: DLTRegionalVpcDLTFargateRT243A2CBC
+      SubnetId:
+        Ref: DLTRegionalVpcDLTSubnetACEFDB0F7
+    Condition: CreateFargateVPCResources
+  DLTRegionalVpcDLTRouteTableAssociationB661C90B5:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: DLTRegionalVpcDLTFargateRT243A2CBC
+      SubnetId:
+        Ref: DLTRegionalVpcDLTSubnetB02222C79
+    Condition: CreateFargateVPCResources
+  DLTRegionalFargateDLTEcsCluster1D89D366:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName:
+        Ref: AWS::StackName
+      ClusterSettings:
+        - Name: containerInsights
+          Value: enabled
+      Tags:
+        - Key: CloudFormation Stack
+          Value:
+            Ref: AWS::StackName
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+  DLTRegionalFargateDLTTaskExecutionRole22C06EF4:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ''
+            - - 'arn:'
+              - Ref: AWS::Partition
+              - ':iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy'
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - s3:HeadObject
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:ListBucket
+                Effect: Allow
+                Resource:
+                  - Fn::Join:
+                      - ''
+                      - - 'arn:'
+                        - Ref: AWS::Partition
+                        - ':s3:::'
+                        - Fn::FindInMap:
+                            - Solution
+                            - Config
+                            - ScenariosS3Bucket
+                  - Fn::Join:
+                      - ''
+                      - - 'arn:'
+                        - Ref: AWS::Partition
+                        - ':s3:::'
+                        - Fn::FindInMap:
+                            - Solution
+                            - Config
+                            - ScenariosS3Bucket
+                        - /*
+            Version: '2012-10-17'
+          PolicyName: ScenariosS3Policy
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+  DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      RetentionInDays: 365
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    UpdateReplacePolicy: Retain
+    DeletionPolicy: Retain
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W84
+            reason: KMS encryption unnecessary for log group
+  DLTRegionalFargateDLTCloudWatchLogsGroupECSLogSubscriptionFilterCanInvokeLambda20B8ED69:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName:
+        Fn::GetAtt:
+          - RealTimeDataRealTimeDataPublisher7E8F8F6C
+          - Arn
+      Principal: logs.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+          - DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+          - Arn
+  DLTRegionalFargateDLTCloudWatchLogsGroupECSLogSubscriptionFilter018E070A:
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn:
+        Fn::GetAtt:
+          - RealTimeDataRealTimeDataPublisher7E8F8F6C
+          - Arn
+      FilterPattern: '"INFO: Current:" "live=true"'
+      LogGroupName:
+        Ref: DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+    DependsOn:
+      - DLTRegionalFargateDLTCloudWatchLogsGroupECSLogSubscriptionFilterCanInvokeLambda20B8ED69
+  DLTRegionalFargateDLTTaskDefinitionB27F0AFD:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Essential: true
+          Image:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - ContainerImage
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group:
+                Ref: DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+              awslogs-stream-prefix: load-testing
+              awslogs-region:
+                Ref: AWS::Region
+          Memory: 4096
+          Name:
+            Fn::Join:
+              - ''
+              - - Ref: AWS::StackName
+                - '-load-tester'
+      Cpu: '2048'
+      ExecutionRoleArn:
+        Fn::GetAtt:
+          - DLTRegionalFargateDLTTaskExecutionRole22C06EF4
+          - Arn
+      Memory: '4096'
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+      TaskRoleArn:
+        Fn::GetAtt:
+          - DLTRegionalFargateDLTTaskExecutionRole22C06EF4
+          - Arn
+  DLTRegionalFargateDLTEcsSecurityGroup76A38D53:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DLTS Tasks Security Group
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+      VpcId:
+        Fn::If:
+          - CreateFargateVPCResources
+          - Ref: DLTRegionalVpcDLTFargateVpc27038C26
+          - Ref: ExistingVPCId
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W40
+            reason: IpProtocol set to -1 (any) as ports are not known prior to running tests
+  DLTRegionalFargateDLTSecGroupEgress64416366:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId:
+        Ref: DLTRegionalFargateDLTEcsSecurityGroup76A38D53
+      IpProtocol: '-1'
+      CidrIp:
+        Ref: EgressCidr
+      Description: Allow tasks to call out to external resources
+  DLTRegionalFargateDLTSecGroupIngress5C8E0E6E:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      IpProtocol: tcp
+      Description: Allow tasks to communicate
+      FromPort: 50000
+      GroupId:
+        Ref: DLTRegionalFargateDLTEcsSecurityGroup76A38D53
+      SourceSecurityGroupId:
+        Ref: DLTRegionalFargateDLTEcsSecurityGroup76A38D53
+      ToPort: 50000
+  RegionalCustomResourceInfraCustomResourceLambdaRoleEBA8B208:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: s3:GetObject
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ''
+                    - - 'arn:'
+                      - Ref: AWS::Partition
+                      - ':s3:::'
+                      - Fn::Join:
+                          - '-'
+                          - - Fn::FindInMap:
+                                - Solution
+                                - Config
+                                - S3Bucket
+                            - Ref: AWS::Region
+                      - /*
+              - Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ''
+                    - - 'arn:'
+                      - Ref: AWS::Partition
+                      - ':s3:::'
+                      - Fn::FindInMap:
+                          - Solution
+                          - Config
+                          - ScenariosS3Bucket
+                      - /*
+              - Action:
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ''
+                    - - 'arn:'
+                      - Ref: AWS::Partition
+                      - ':dynamodb:'
+                      - Fn::FindInMap:
+                          - Solution
+                          - Config
+                          - MainStackRegion
+                      - ':'
+                      - Ref: AWS::AccountId
+                      - ':table/'
+                      - Fn::FindInMap:
+                          - Solution
+                          - Config
+                          - ScenariosTable
+              - Action:
+                  - iot:DescribeEndpoint
+                  - iot:DetachPrincipalPolicy
+                Effect: Allow
+                Resource: '*'
+              - Action: iot:ListTargetsForPolicy
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ''
+                    - - 'arn:'
+                      - Ref: AWS::Partition
+                      - ':iot:'
+                      - Ref: AWS::Region
+                      - ':'
+                      - Ref: AWS::AccountId
+                      - ':policy/*'
+            Version: '2012-10-17'
+          PolicyName: CustomResourcePolicy
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W11
+            reason: iot:DescribeEndpoint and iot:DetachPrincipalPolicy cannot specify the resource.
+  RegionalCustomResourceInfraCustomResourceLambda86A7E873:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Join:
+            - '-'
+            - - Fn::FindInMap:
+                  - Solution
+                  - Config
+                  - S3Bucket
+              - Ref: AWS::Region
+        S3Key:
+          Fn::Join:
+            - ''
+            - - Fn::FindInMap:
+                  - Solution
+                  - Config
+                  - KeyPrefix
+              - /regional-custom-resource.zip
+      Role:
+        Fn::GetAtt:
+          - RegionalCustomResourceInfraCustomResourceLambdaRoleEBA8B208
+          - Arn
+      Description: CFN Lambda backed custom resource to deploy assets to s3
+      Environment:
+        Variables:
+          METRIC_URL:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - URL
+          SOLUTION_ID:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+          VERSION:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - CodeVersion
+          MAIN_REGION:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - MainStackRegion
+          DDB_TABLE:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - ScenariosTable
+          S3_BUCKET:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - ScenariosS3Bucket
+      Handler: index.handler
+      Runtime: nodejs16.x
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+      Timeout: 120
+    DependsOn:
+      - RegionalCustomResourceInfraCustomResourceLambdaRoleEBA8B208
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: CloudWatchLogsPolicy covers a permission to write CloudWatch logs.
+          - id: W89
+            reason: VPC not needed for lambda
+          - id: W92
+            reason: Does not run concurrent executions
+  RegionalPermissionsForTaskLambdasRegionalECRPerms80299EED:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ecs:RunTask
+              - ecs:DescribeTasks
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ''
+                  - - 'arn:'
+                    - Ref: AWS::Partition
+                    - ':ecs:'
+                    - Ref: AWS::Region
+                    - ':'
+                    - Ref: AWS::AccountId
+                    - ':task/*'
+              - Fn::Join:
+                  - ''
+                  - - 'arn:'
+                    - Ref: AWS::Partition
+                    - ':ecs:'
+                    - Ref: AWS::Region
+                    - ':'
+                    - Ref: AWS::AccountId
+                    - ':task-definition/*:*'
+          - Action: iam:PassRole
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - DLTRegionalFargateDLTTaskExecutionRole22C06EF4
+                - Arn
+        Version: '2012-10-17'
+      PolicyName:
+        Fn::Join:
+          - ''
+          - - RegionalECRPerms-
+            - Ref: AWS::StackName
+            - '-'
+            - Ref: AWS::Region
+      Roles:
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - TaskRunnerRoleName
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - APIServicesLambdaRoleName
+  RegionalPermissionsForTaskLambdasECSCloudWatchPutMetricsd8D7608DF:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: logs:PutMetricFilter
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+                - Arn
+        Version: '2012-10-17'
+      PolicyName:
+        Fn::Join:
+          - ''
+          - - ECSCloudWatchPutMetrics-
+            - Ref: AWS::StackName
+            - '-'
+            - Ref: AWS::Region
+      Roles:
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - TaskRunnerRoleName
+  RegionalPermissionsForTaskLambdasECSCloudWatchDelMetrics67273BC1:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: logs:DeleteMetricFilter
+            Effect: Allow
+            Resource:
+              Fn::GetAtt:
+                - DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+                - Arn
+        Version: '2012-10-17'
+      PolicyName:
+        Fn::Join:
+          - ''
+          - - ECSCloudWatchDelMetrics-
+            - Ref: AWS::StackName
+            - '-'
+            - Ref: AWS::Region
+      Roles:
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - APIServicesLambdaRoleName
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - ResultsParserRoleName
+  RegionalPermissionsForTaskLambdasECSStopPolicy32D8C7AF:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: ecs:StopTask
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ''
+                  - - 'arn:'
+                    - Ref: AWS::Partition
+                    - ':ecs:'
+                    - Ref: AWS::Region
+                    - ':'
+                    - Ref: AWS::AccountId
+                    - ':task/*'
+              - Fn::Join:
+                  - ''
+                  - - 'arn:'
+                    - Ref: AWS::Partition
+                    - ':ecs:'
+                    - Ref: AWS::Region
+                    - ':'
+                    - Ref: AWS::AccountId
+                    - ':task-definition/*:*'
+        Version: '2012-10-17'
+      PolicyName:
+        Fn::Join:
+          - ''
+          - - ECSStopPolicy-
+            - Ref: AWS::StackName
+            - '-'
+            - Ref: AWS::Region
+      Roles:
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - TaskCancelerRoleName
+  RegionalPermissionsForTaskLambdasECSDescribePolicyAE42B7AD:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: ecs:DescribeTasks
+            Effect: Allow
+            Resource:
+              Fn::Join:
+                - ''
+                - - 'arn:'
+                  - Ref: AWS::Partition
+                  - ':ecs:'
+                  - Ref: AWS::Region
+                  - ':'
+                  - Ref: AWS::AccountId
+                  - ':task/*'
+        Version: '2012-10-17'
+      PolicyName:
+        Fn::Join:
+          - ''
+          - - ECSDescribePolicy
+            - Ref: AWS::Region
+      Roles:
+        - Fn::FindInMap:
+            - Solution
+            - Config
+            - TaskStatusCheckerRoleName
+  DLTCustomResourcesGetIotEndpoint700ABCC8:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - RegionalCustomResourceInfraCustomResourceLambda86A7E873
+          - Arn
+      Resource: GetIotEndpoint
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+  DLTCustomResourcesTestingResourcesConfig0BCA657F:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - RegionalCustomResourceInfraCustomResourceLambda86A7E873
+          - Arn
+      TestingResourcesConfig:
+        region:
+          Ref: AWS::Region
+        subnetA:
+          Fn::If:
+            - CreateFargateVPCResources
+            - Ref: DLTRegionalVpcDLTSubnetACEFDB0F7
+            - Ref: ExistingSubnetA
+        subnetB:
+          Fn::If:
+            - CreateFargateVPCResources
+            - Ref: DLTRegionalVpcDLTSubnetB02222C79
+            - Ref: ExistingSubnetB
+        ecsCloudWatchLogGroup:
+          Ref: DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+        taskSecurityGroup:
+          Ref: DLTRegionalFargateDLTEcsSecurityGroup76A38D53
+        taskDefinition:
+          Ref: DLTRegionalFargateDLTTaskDefinitionB27F0AFD
+        taskImage:
+          Fn::Join:
+            - ''
+            - - Ref: AWS::StackName
+              - '-load-tester'
+        taskCluster:
+          Ref: DLTRegionalFargateDLTEcsCluster1D89D366
+      Resource: TestingResourcesConfigFile
+      Uuid:
+        Fn::FindInMap:
+          - Solution
+          - Config
+          - Uuid
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+  DLTCustomResourcesAnonymousMetricE30E46B4:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken:
+        Fn::GetAtt:
+          - RegionalCustomResourceInfraCustomResourceLambda86A7E873
+          - Arn
+      existingVPC:
+        Fn::If:
+          - BoolExistingVPC
+          - true
+          - false
+      Region:
+        Ref: AWS::Region
+      Resource: AnonymousMetric
+      SolutionId:
+        Fn::FindInMap:
+          - Solution
+          - Config
+          - SolutionId
+      UUID:
+        Fn::FindInMap:
+          - Solution
+          - Config
+          - Uuid
+      VERSION:
+        Fn::FindInMap:
+          - Solution
+          - Config
+          - CodeVersion
+    UpdateReplacePolicy: Delete
+    DeletionPolicy: Delete
+    Condition: SendAnonymousUsage
+  RealTimeDatarealTimeDataPublisherRoleA8976D01:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action: iot:Publish
+                Effect: Allow
+                Resource:
+                  Fn::Join:
+                    - ''
+                    - - 'arn:'
+                      - Ref: AWS::Partition
+                      - ':iot:'
+                      - Fn::FindInMap:
+                          - Solution
+                          - Config
+                          - MainStackRegion
+                      - ':'
+                      - Ref: AWS::AccountId
+                      - ':topic/*'
+            Version: '2012-10-17'
+          PolicyName: IoTPolicy
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+  RealTimeDataRealTimeDataPublisher7E8F8F6C:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Join:
+            - '-'
+            - - Fn::FindInMap:
+                  - Solution
+                  - Config
+                  - S3Bucket
+              - Ref: AWS::Region
+        S3Key:
+          Fn::Join:
+            - ''
+            - - Fn::FindInMap:
+                  - Solution
+                  - Config
+                  - KeyPrefix
+              - /real-time-data-publisher.zip
+      Role:
+        Fn::GetAtt:
+          - RealTimeDatarealTimeDataPublisherRoleA8976D01
+          - Arn
+      Description: Real time data publisher
+      Environment:
+        Variables:
+          MAIN_REGION:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - MainStackRegion
+          IOT_ENDPOINT:
+            Fn::GetAtt:
+              - DLTCustomResourcesGetIotEndpoint700ABCC8
+              - IOT_ENDPOINT
+          SOLUTION_ID:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+          VERSION:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - CodeVersion
+      Handler: index.handler
+      Runtime: nodejs16.x
+      Tags:
+        - Key: SolutionId
+          Value:
+            Fn::FindInMap:
+              - Solution
+              - Config
+              - SolutionId
+      Timeout: 180
+    DependsOn:
+      - RealTimeDatarealTimeDataPublisherRoleA8976D01
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+          - id: W58
+            reason: CloudWatchLogsPolicy covers a permission to write CloudWatch logs.
+          - id: W89
+            reason: This Lambda function does not require a VPC
+          - id: W92
+            reason: Does not run concurrent executions
+  AppRegistry968496A3:
+    Type: AWS::ServiceCatalogAppRegistry::Application
+    Properties:
+      Name:
+        Fn::Join:
+          - '-'
+          - - distributed-load-testing-on-aws
+            - Ref: AWS::Region
+            - Ref: AWS::AccountId
+      Description: Service Catalog application to track and manage all your resources for the solution Distributed Load Testing
+      Tags:
+        SolutionId:
+          Fn::FindInMap:
+            - Solution
+            - Config
+            - SolutionId
+        Solutions:ApplicationType: AWS-Solutions
+        Solutions:SolutionID:
+          Fn::FindInMap:
+            - Solution
+            - Config
+            - SolutionId
+        Solutions:SolutionName: Distributed Load Testing
+        Solutions:SolutionVersion:
+          Fn::FindInMap:
+            - Solution
+            - Config
+            - CodeVersion
+  AppRegistryAttributeGroupAssociation285f3c9d78652039055C:
+    Type: AWS::ServiceCatalogAppRegistry::AttributeGroupAssociation
+    Properties:
+      Application:
+        Fn::GetAtt:
+          - AppRegistry968496A3
+          - Id
+      AttributeGroup:
+        Fn::GetAtt:
+          - DefaultApplicationAttributesFC1CC26B
+          - Id
+  AppRegistryAssociation:
+    Type: AWS::ServiceCatalogAppRegistry::ResourceAssociation
+    Properties:
+      Application:
+        Fn::GetAtt:
+          - AppRegistry968496A3
+          - Id
+      Resource:
+        Ref: AWS::StackId
+      ResourceType: CFN_STACK
+  DefaultApplicationAttributesFC1CC26B:
+    Type: AWS::ServiceCatalogAppRegistry::AttributeGroup
+    Properties:
+      Attributes:
+        applicationType: AWS-Solutions
+        version:
+          Fn::FindInMap:
+            - Solution
+            - Config
+            - CodeVersion
+        solutionID:
+          Fn::FindInMap:
+            - Solution
+            - Config
+            - SolutionId
+        solutionName: Distributed Load Testing
+      Name:
+        Ref: AWS::StackName
+      Description: Attribute group for solution information
+      Tags:
+        SolutionId:
+          Fn::FindInMap:
+            - Solution
+            - Config
+            - SolutionId
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/3VSwU7DMAz9Fu5dGENMHBmFISQQ05i4IjfzOm9tUsUJaKr67zhtt8EmTn6x/eyXl4xUfXujhhfwzQO93A4KylT97kFvk3RlZuCgRI8uHuahwBhfoarI5BGm1izJkzWJ8D9rglLVM1uQ3rXsDs1tx4uxSfha3Qe9RX8PjAnqkaql9jFLY8t7yAz6iJ6NbBX8BB6/Ydfxg8cFZN00YfS1iRe56xKNP3QdZx1JE2arCVq1sYw6OPK7J2dDdZZ4zB0yn6WfTZtvRDe3utMicG/PAnj7gCsyrSFNUthcel5sfthwwCKNtaMqNk6p6AecZ2UIlNkS2lUzdCUxR/nTYPT+HnsszqL7Io0aPMhueSSHObF3u5Y+qSp5jcP1xTRHmXjTKjrxZo5sg9Onlv3lNE2y70tSccGWx+NxRMRvwVfBN8l4rK4GUFRrkA931/+4yxj/ld6317/Vn8kwdolqw5dfV2M1GsrsDRMNXDCeSlTzLv4AzAasVukCAAA=
+    Condition: CDKMetadataAvailable
+Outputs:
+  AppRegistryApplicationManagerUrl775D5C3D:
+    Description: Application manager url for the application created.
+    Value:
+      Fn::Join:
+        - ''
+        - - https://
+          - Ref: AWS::Region
+          - .console.aws.amazon.com/systems-manager/appmanager/application/AWS_AppRegistry_Application-
+          - Fn::Join:
+              - '-'
+              - - distributed-load-testing-on-aws
+                - Ref: AWS::Region
+                - Ref: AWS::AccountId
+  ECSCloudWatchLogGroup:
+    Description: The CloudWatch log group for ECS
+    Value:
+      Ref: DLTRegionalFargateDLTCloudWatchLogsGroupAE1278C6
+  SubnetA:
+    Description: Subnet A used by the Fargate tasks
+    Value:
+      Fn::If:
+        - CreateFargateVPCResources
+        - Ref: DLTRegionalVpcDLTSubnetACEFDB0F7
+        - Ref: ExistingSubnetA
+  SubnetB:
+    Description: Subnet B used by the Fargate tasks
+    Value:
+      Fn::If:
+        - CreateFargateVPCResources
+        - Ref: DLTRegionalVpcDLTSubnetB02222C79
+        - Ref: ExistingSubnetB
+  TaskCluster:
+    Description: Fargate task cluster
+    Value:
+      Ref: DLTRegionalFargateDLTEcsCluster1D89D366
+  TaskDefinition:
+    Description: The Fargate task definition
+    Value:
+      Ref: DLTRegionalFargateDLTTaskDefinitionB27F0AFD
+  TaskSecurityGroup:
+    Description: Security Group used by the Fargate taks
+    Value:
+      Ref: DLTRegionalFargateDLTEcsSecurityGroup76A38D53
