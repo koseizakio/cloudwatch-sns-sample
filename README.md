@@ -14,7 +14,7 @@ https://koseizakio-demo.link
 
 ## Koseizakio-demoのWeb構成図
 
-![](./img/サンプル構成図.png)
+![](./img/sample-zu.png)
  
 ## Koseizakio-demoのWebサイトの見積
 
