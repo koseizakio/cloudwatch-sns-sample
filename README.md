@@ -4,13 +4,14 @@ Cloudformationで VPC-EC2-ELBの構築を自動化した。
 
 EC2は、CPUの過負荷が謙虚に出るように```t3.nano```のインスタンスを利用した。
 
-EC2でLinuxにnginxをインストールして、[index.html](./index.html)を表示させるようにした。
+EC2でLinuxにnginxをインストールして、配下:/var/www/html/index.html 
+[index.html](./index.html)を表示させるようにした。
 
 Route53でELBと紐付け、AWS ACMでSSL化した。
 
 ELBにEC2２台接続して(東京リージョン-A)の方を１台切断しても正常に動作した。.
 
-https://koseizakio-demo.link
+https://koseizakio-demo.link (現在はアクセス不可)
 
 ![](./img/koseizakio-web.png)
 
