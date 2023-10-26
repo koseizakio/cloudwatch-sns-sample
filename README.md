@@ -11,7 +11,7 @@ Route53でELBと紐付け、AWS ACMでSSL化した。
 
 ELBにEC2２台接続して(東京リージョン-A)の方を１台切断しても正常に動作した。.
 
-https://koseizakio-demo.link (現在はアクセス不可)
+https://koseizakio-demo.link (現在はアクセス可能)
 
 ![](./img/koseizakio-web.png)
 
